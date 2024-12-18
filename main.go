@@ -8,6 +8,7 @@ package main
 import (
 	"log"
 	"oj-backend/config"
+	db "oj-backend/database"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -20,6 +21,9 @@ func main() {
 
 	// load environment variables
 	config.LoadEnv()
+
+	// connect to database
+	db.ConnectDB()
 
 	app := fiber.New()
 
