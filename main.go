@@ -6,9 +6,10 @@
 package main
 
 import (
-	"log"
+	"fmt"
 	"oj-backend/config"
 	db "oj-backend/database"
+	"oj-backend/router"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -25,12 +26,16 @@ func main() {
 	// connect to database
 	db.ConnectDB()
 
+	// create new fiber instance
 	app := fiber.New()
 
-	app.Get("/", func(c *fiber.Ctx) error {
-		log.Println("GET")
-		return c.SendStatus(fiber.StatusOK)
-	})
+	// setup routes
+	router.SetupRoutes(app)
 
-	log.Fatal(app.Listen(port))
+	// app.Get("/", func(c *fiber.Ctx) error {
+	// 	log.Println("GET")
+	// 	return c.SendStatus(fiber.StatusOK)
+	// })
+
+	fmt.Println(app.Listen(port))
 }
