@@ -34,8 +34,18 @@ func SetupRoutes(app *fiber.App) {
 
 	// auth
 	auth := app.Group("/auth")
+	auth.Post("/signup", handler.Signup)
+	auth.Post("/login", handler.Login)
+	auth.Get("/logout", handler.Logout)
+	auth.Get("/reclaim-accesstoken", handler.ReclaimAccessToken)
 
 	// api
 	api := app.Group("/api")
-
+	api.Get("/get-contestlist", handler.GetContestList)
+	api.Get("/get-questionlist", handler.GetQuestionList)
+	api.Get("/get-question", handler.GetQuestion)
+	api.Post("/submit-code", handler.SubmitCode)
+	api.Get("/get-submissions", handler.GetSubmissions)
+	api.Get("/get-solutioncode", handler.GetSolutionCode)
+	api.Get("/get-leaderboardstats", handler.GetLeaderboardStats)
 }
