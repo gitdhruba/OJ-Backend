@@ -8,6 +8,7 @@ package database
 import (
 	"fmt"
 	"oj-backend/config"
+	"oj-backend/models"
 	"strconv"
 
 	"gorm.io/driver/postgres"
@@ -43,5 +44,5 @@ func ConnectDB() {
 	DB.Logger = logger.Default.LogMode(logger.Info)
 
 	// automigration
-	// pending
+	DB.AutoMigrate(&models.User{}, &models.Admin{})
 }

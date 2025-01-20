@@ -7,14 +7,19 @@ package router
 
 import (
 	"oj-backend/handler"
+	"oj-backend/util"
 
 	"github.com/gofiber/fiber/v2"
 )
 
 func SetupRoutes(app *fiber.App) {
 
+	api := app.Group("/api")
+
 	// admin
-	admin := app.Group("/admin")
+	admin := api.Group("/admin")
+	admin.Post("/login", handler.AdminLogin)
+	admin.Use(util.AdminMiddleware())
 	admin.Post("/create-admin", handler.CreateAdmin)
 	admin.Put("/modify-languages", handler.ModifyLanguages)
 	admin.Post("/create-contest", handler.CreateContest)
@@ -33,19 +38,19 @@ func SetupRoutes(app *fiber.App) {
 	admin.Get("/get-testcases", handler.GetTestcases)
 
 	// auth
-	auth := app.Group("/auth")
+	auth := api.Group("/auth")
 	auth.Post("/signup", handler.Signup)
 	auth.Post("/login", handler.Login)
 	auth.Get("/logout", handler.Logout)
 	auth.Get("/reclaim-accesstoken", handler.ReclaimAccessToken)
 
 	// api
-	api := app.Group("/api")
-	api.Get("/get-contestlist", handler.GetContestList)
-	api.Get("/get-questionlist", handler.GetQuestionList)
-	api.Get("/get-question", handler.GetQuestion)
-	api.Post("/submit-code", handler.SubmitCode)
-	api.Get("/get-submissions", handler.GetSubmissions)
-	api.Get("/get-solutioncode", handler.GetSolutionCode)
-	api.Get("/get-leaderboardstats", handler.GetLeaderboardStats)
+	contest := api.Group("/contest")
+	contest.Get("/get-contestlist", handler.GetContestList)
+	contest.Get("/get-questionlist", handler.GetQuestionList)
+	contest.Get("/get-question", handler.GetQuestion)
+	contest.Post("/submit-code", handler.SubmitCode)
+	contest.Get("/get-submissions", handler.GetSubmissions)
+	contest.Get("/get-solutioncode", handler.GetSolutionCode)
+	contest.Get("/get-leaderboardstats", handler.GetLeaderboardStats)
 }

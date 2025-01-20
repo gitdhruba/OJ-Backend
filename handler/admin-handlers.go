@@ -5,7 +5,50 @@
 
 package handler
 
-import "github.com/gofiber/fiber/v2"
+import (
+	db "oj-backend/database"
+	"oj-backend/models"
+	"oj-backend/util"
+	"strconv"
+
+	"github.com/gofiber/fiber/v2"
+	"golang.org/x/crypto/bcrypt"
+)
+
+// login
+func AdminLogin(c *fiber.Ctx) error {
+	u := new(models.User)
+	if err := c.BodyParser(u); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid request",
+		})
+	}
+
+	password := u.Password
+	if res := db.DB.Where(&models.Admin{Username: u.Username}).Or(&models.Admin{Email: u.Username}).First(&u); (res.Error != nil) || (res.RowsAffected <= 0) {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": "Invalid credentials",
+		})
+	}
+
+	if err := bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(password)); err != nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": "Invalid credentials",
+		})
+	}
+
+	accessToken, refreshToken, ok := util.GenerateTokens(strconv.Itoa(u.ID), true)
+	if !ok {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "could not generate tokens",
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"access_token":  accessToken,
+		"refresh_token": refreshToken,
+	})
+}
 
 // create-admin
 func CreateAdmin(c *fiber.Ctx) error {

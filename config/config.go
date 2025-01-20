@@ -17,6 +17,7 @@ const configPath = "./.env"
 
 // Load environment variables from env file
 func LoadEnv() {
+	fmt.Println("[-->] loading env")
 	err := godotenv.Load(configPath)
 	if err != nil {
 		panic(err)
