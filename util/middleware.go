@@ -1,5 +1,5 @@
 /***********************************************************************
-     Copyright (c) 2024 GNU/Linux Users' Group (NIT Durgapur)
+     Copyright (c) 2025 GNU/Linux Users' Group (NIT Durgapur)
      Author: Dhruba Sinha
 ************************************************************************/
 
@@ -8,7 +8,6 @@ package util
 import (
 	"oj-backend/config"
 	"oj-backend/models"
-	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
@@ -21,16 +20,12 @@ func validateToken(tokenstring string) (*models.Claims, bool) {
 			return jwtSecret, nil
 		})
 
-	if err != nil || !token.Valid {
-		return nil, false
-	}
-
 	claims, ok := token.Claims.(*models.Claims)
 	if !ok {
 		return nil, false
 	}
 
-	return claims, true
+	return claims, ((err == nil) && token.Valid)
 }
 
 // middleware for /api/
@@ -45,8 +40,8 @@ func ApiMiddleware() func(*fiber.Ctx) error {
 			})
 		}
 
-		accessClaims, ok := validateToken(accessToken)
-		if !ok {
+		accessClaims, isValid := validateToken(accessToken)
+		if accessClaims == nil {
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 				"message": "Unauthorized",
 			})
@@ -54,21 +49,15 @@ func ApiMiddleware() func(*fiber.Ctx) error {
 
 		user, _ := accessClaims.GetIssuer()
 
-		if expiry, _ := accessClaims.GetExpirationTime(); expiry.Time.Before(time.Now()) {
+		if !isValid {
 			refreshClaims, ok := validateToken(refreshToken)
-			if !ok {
+			if (refreshClaims == nil) || !ok {
 				return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 					"message": "Unauthorized",
 				})
 			}
 
 			if tmpuser, _ := refreshClaims.GetIssuer(); user != tmpuser {
-				return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-					"message": "Unauthorized",
-				})
-			}
-
-			if expiry, _ := refreshClaims.GetExpirationTime(); expiry.Time.Before(time.Now()) {
 				return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 					"message": "Unauthorized",
 				})
@@ -81,11 +70,11 @@ func ApiMiddleware() func(*fiber.Ctx) error {
 					"message": "Couldn't regenerate tokens",
 				})
 			}
-		}
 
-		// set access and refresh tokens in response header
-		c.Set("access_token", accessToken)
-		c.Set("refresh_token", refreshToken)
+			// set access and refresh tokens in response header
+			c.Set("access_token", accessToken)
+			c.Set("refresh_token", refreshToken)
+		}
 
 		// save userid for request processing
 		c.Locals("user", user)
@@ -106,8 +95,8 @@ func AdminMiddleware() func(*fiber.Ctx) error {
 			})
 		}
 
-		accessClaims, ok := validateToken(accessToken)
-		if !ok || !accessClaims.Admin {
+		accessClaims, isValid := validateToken(accessToken)
+		if (accessClaims == nil) || !accessClaims.Admin {
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 				"message": "Unauthorized",
 			})
@@ -115,21 +104,15 @@ func AdminMiddleware() func(*fiber.Ctx) error {
 
 		user, _ := accessClaims.GetIssuer()
 
-		if expiry, _ := accessClaims.GetExpirationTime(); expiry.Time.Before(time.Now()) {
+		if !isValid {
 			refreshClaims, ok := validateToken(refreshToken)
-			if !ok || !refreshClaims.Admin {
+			if (refreshClaims == nil) || !ok || !refreshClaims.Admin {
 				return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 					"message": "Unauthorized",
 				})
 			}
 
 			if tmpuser, _ := refreshClaims.GetIssuer(); user != tmpuser {
-				return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-					"message": "Unauthorized",
-				})
-			}
-
-			if expiry, _ := refreshClaims.GetExpirationTime(); expiry.Time.Before(time.Now()) {
 				return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 					"message": "Unauthorized",
 				})
@@ -142,11 +125,11 @@ func AdminMiddleware() func(*fiber.Ctx) error {
 					"message": "Couldn't regenerate tokens",
 				})
 			}
-		}
 
-		// set access and refresh tokens in response header
-		c.Set("access_token", accessToken)
-		c.Set("refresh_token", refreshToken)
+			// set access and refresh tokens in response header
+			c.Set("access_token", accessToken)
+			c.Set("refresh_token", refreshToken)
+		}
 
 		// save userid for request processing
 		c.Locals("user", user)

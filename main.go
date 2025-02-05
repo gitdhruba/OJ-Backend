@@ -1,5 +1,5 @@
 /***********************************************************************
-     Copyright (c) 2024 GNU/Linux Users' Group (NIT Durgapur)
+     Copyright (c) 2025 GNU/Linux Users' Group (NIT Durgapur)
      Author: Dhruba Sinha
 ************************************************************************/
 
@@ -36,6 +36,14 @@ func main() {
 	// 	log.Println("GET")
 	// 	return c.SendStatus(fiber.StatusOK)
 	// })
+
+	// adminpass := []byte("glug@2025")
+	// hashedPassword, err := bcrypt.GenerateFromPassword(adminpass, 15)
+	// if err != nil {
+	// 	fmt.Println(err)
+	// } else {
+	// 	fmt.Println(string(hashedPassword))
+	// }
 
 	fmt.Println(app.Listen(port))
 }

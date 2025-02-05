@@ -1,5 +1,5 @@
 /***********************************************************************
-     Copyright (c) 2024 GNU/Linux Users' Group (NIT Durgapur)
+     Copyright (c) 2025 GNU/Linux Users' Group (NIT Durgapur)
      Author: Dhruba Sinha
 ************************************************************************/
 
@@ -34,8 +34,8 @@ func ConnectDB() {
 
 	dsn := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s", dbHost, dbPort, dbUser, dbPassword, dbName)
 
-	DB, err := gorm.Open(postgres.Open(dsn))
-	if err != nil {
+	DB, err = gorm.Open(postgres.Open(dsn))
+	if (err != nil) || (DB == nil) {
 		panic("failed to connect database")
 	}
 

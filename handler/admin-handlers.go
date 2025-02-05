@@ -1,11 +1,13 @@
 /***********************************************************************
-     Copyright (c) 2024 GNU/Linux Users' Group (NIT Durgapur)
+     Copyright (c) 2025 GNU/Linux Users' Group (NIT Durgapur)
      Author: Dhruba Sinha
 ************************************************************************/
 
 package handler
 
 import (
+	"fmt"
+	"oj-backend/config"
 	db "oj-backend/database"
 	"oj-backend/models"
 	"oj-backend/util"
@@ -17,14 +19,15 @@ import (
 
 // login
 func AdminLogin(c *fiber.Ctx) error {
-	u := new(models.User)
-	if err := c.BodyParser(u); err != nil {
+	var u models.Admin
+	if err := c.BodyParser(&u); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "Invalid request",
 		})
 	}
 
 	password := u.Password
+	// fmt.Println(db.DB)
 	if res := db.DB.Where(&models.Admin{Username: u.Username}).Or(&models.Admin{Email: u.Username}).First(&u); (res.Error != nil) || (res.RowsAffected <= 0) {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 			"error": "Invalid credentials",
@@ -52,7 +55,49 @@ func AdminLogin(c *fiber.Ctx) error {
 
 // create-admin
 func CreateAdmin(c *fiber.Ctx) error {
-	return c.SendStatus(fiber.StatusForbidden)
+	var u models.Admin
+	if err := c.BodyParser(&u); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid request",
+		})
+	}
+
+	if u.Username == "" || u.Email == "" || u.Password == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "username, email and password are required",
+		})
+	}
+
+	if res := db.DB.Where(&models.Admin{Username: u.Username}).Or(&models.Admin{Email: u.Email}).First(&u); (res.Error == nil) || (res.RowsAffected > 0) {
+		return c.Status(fiber.StatusConflict).JSON(fiber.Map{
+			"error": "username or email already exists",
+		})
+	}
+
+	cost, err := strconv.Atoi(config.GetEnv("BCRYPT_COST"))
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "could not create admin",
+		})
+	}
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(u.Password), cost)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "could not create admin",
+		})
+	}
+
+	u.Password = string(hashedPassword)
+	if res := db.DB.Model(&u).Create(&u); res.Error != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "could not create admin",
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": "admin created successfully",
+	})
 }
 
 // create-contest
@@ -67,6 +112,7 @@ func ModifyContest(c *fiber.Ctx) error {
 
 // update-languages
 func ModifyLanguages(c *fiber.Ctx) error {
+	fmt.Println("ModifyLanguages")
 	return c.SendStatus(fiber.StatusForbidden)
 }
 

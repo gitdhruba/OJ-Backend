@@ -1,5 +1,5 @@
 /***********************************************************************
-     Copyright (c) 2024 GNU/Linux Users' Group (NIT Durgapur)
+     Copyright (c) 2025 GNU/Linux Users' Group (NIT Durgapur)
      Author: Dhruba Sinha
 ************************************************************************/
 
@@ -28,7 +28,7 @@ func GenerateTokens(id string, isAdmin bool) (string, string, bool) {
 	}
 
 	// generate access token
-	accessToken := jwt.NewWithClaims(jwt.SigningMethodES256, jwtClaim)
+	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwtClaim)
 	accessTokenString, err := accessToken.SignedString(jwtSecret)
 	if err != nil {
 		return "", "", false
@@ -37,7 +37,7 @@ func GenerateTokens(id string, isAdmin bool) (string, string, bool) {
 	// generate refresh token
 	jwtClaim.StandardClaims.Subject = "refresh_token"
 	jwtClaim.StandardClaims.ExpiresAt = jwt.NewNumericDate(t.Add(time.Hour * 24))
-	refreshToken := jwt.NewWithClaims(jwt.SigningMethodES256, jwtClaim)
+	refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwtClaim)
 	refreshTokenString, err := refreshToken.SignedString(jwtSecret)
 	if err != nil {
 		return "", "", false
