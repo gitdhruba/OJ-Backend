@@ -44,5 +44,12 @@ func ConnectDB() {
 	DB.Logger = logger.Default.LogMode(logger.Info)
 
 	// automigration
-	DB.AutoMigrate(&models.User{}, &models.Admin{})
+	DB.AutoMigrate(
+		&models.User{},
+		&models.Admin{},
+		&models.Contest{},
+		&models.Question{},
+		&models.Testcase{},
+		&models.Submission{},
+	)
 }

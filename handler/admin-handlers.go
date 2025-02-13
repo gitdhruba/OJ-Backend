@@ -11,6 +11,7 @@ import (
 	db "oj-backend/database"
 	"oj-backend/models"
 	"oj-backend/util"
+	"os"
 	"strconv"
 
 	"github.com/gofiber/fiber/v2"
@@ -102,10 +103,38 @@ func CreateAdmin(c *fiber.Ctx) error {
 
 // create-contest
 func CreateContest(c *fiber.Ctx) error {
-	return c.SendStatus(fiber.StatusForbidden)
+	var contest models.Contest
+	if err := c.BodyParser(&contest); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid request",
+		})
+	}
+
+	// if contest.Title == "" || len(contest.Description) == 0 || contest.StartTime == "" || contest.EndTime == "" || len(contest.Languages) == 0 {
+	// 	return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+	// 		"error": "title, description, start_time, end_time and languages are required",
+	// 	})
+	// }
+
+	// if res := db.DB.Where(&models.Contest{Title: contest.Title}).First(&contest); (res.Error == nil) || (res.RowsAffected > 0) {
+	// 	return c.Status(fiber.StatusConflict).JSON(fiber.Map{
+	// 		"error": "contest already exists",
+	// 	})
+	// }
+
+	if res := db.DB.Save(&contest); res.Error != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": res.Error.Error(),
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message":   "contest created successfully",
+		"contestID": contest.ID,
+	})
 }
 
-// create-contest
+// modify-contest
 func ModifyContest(c *fiber.Ctx) error {
 	return c.SendStatus(fiber.StatusForbidden)
 }
@@ -118,7 +147,23 @@ func ModifyLanguages(c *fiber.Ctx) error {
 
 // add-question
 func AddQuestion(c *fiber.Ctx) error {
-	return c.SendStatus(fiber.StatusForbidden)
+	var question models.Question
+	if err := c.BodyParser(&question); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid request",
+		})
+	}
+
+	if res := db.DB.Save(&question); res.Error != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": res.Error.Error(),
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message":    "question created successfully",
+		"questionID": question.ID,
+	})
 }
 
 // update-question
@@ -128,7 +173,87 @@ func ModifyQuestion(c *fiber.Ctx) error {
 
 // add-testcase
 func AddTestcase(c *fiber.Ctx) error {
-	return c.SendStatus(fiber.StatusForbidden)
+	inputFile, err1 := c.FormFile("input_file")
+	outputFile, err2 := c.FormFile("output_file")
+
+	if err1 != nil || err2 != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Both input.txt and output.txt must be uploaded",
+		})
+	}
+
+	contestID, err3 := strconv.Atoi(c.FormValue("contest_id", "NA"))
+	questionID, err4 := strconv.Atoi(c.FormValue("question_id", "NA"))
+	testcaseNo, err5 := strconv.Atoi(c.FormValue("testcase_no", "NA"))
+
+	if err3 != nil || err4 != nil || err5 != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "invalid contest_id or question_id",
+		})
+	}
+
+	// check whether contest and question exists
+	var contest models.Contest
+	if res := db.DB.Where(&models.Contest{ID: contestID}).First(&contest); (res.Error != nil) || (res.RowsAffected <= 0) {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "contest does not exist",
+		})
+	}
+
+	var question models.Question
+	if res := db.DB.Where(&models.Question{ID: questionID}).First(&question); (res.Error != nil) || (res.RowsAffected <= 0) {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "question does not exist",
+		})
+	}
+
+	// create testcase directory
+	testcasePath := fmt.Sprintf("%s/%d/%d", config.GetEnv("CONTEST_PATH"), contestID, questionID)
+	if err := os.MkdirAll(testcasePath, 0755); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "could not create testcase directory",
+		})
+	}
+
+	inputFile.Filename = fmt.Sprintf("input_%d.txt", testcaseNo)
+	outputFile.Filename = fmt.Sprintf("output_%d.txt", testcaseNo)
+	testcase := models.Testcase{
+		No:             testcaseNo,
+		QuestionID:     questionID,
+		InputFilePath:  fmt.Sprintf("%s/%s", testcasePath, inputFile.Filename),
+		OutputFilePath: fmt.Sprintf("%s/%s", testcasePath, outputFile.Filename),
+	}
+
+	// save input file
+	if err := c.SaveFile(inputFile, testcase.InputFilePath); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "could not save input file",
+		})
+	}
+
+	// save output file
+	if err := c.SaveFile(outputFile, testcase.OutputFilePath); err != nil {
+		// delete input file
+		os.Remove(fmt.Sprintf("%s/%s", testcasePath, inputFile.Filename))
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "could not save output file",
+		})
+	}
+
+	// save testcase in database
+	if res := db.DB.Save(&testcase); res.Error != nil {
+		// delete input and output files
+		os.Remove(testcase.InputFilePath)
+		os.Remove(testcase.OutputFilePath)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": res.Error.Error(),
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message":    "testcase created successfully",
+		"testcaseID": testcase.ID,
+	})
 }
 
 // delete-language
