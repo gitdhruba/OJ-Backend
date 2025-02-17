@@ -14,6 +14,11 @@ import (
 
 func SetupRoutes(app *fiber.App) {
 
+	// hello for root
+	app.Get("/", func(c *fiber.Ctx) error {
+		return c.SendString("Hi there! This is the backend server for the Online Judge.")
+	})
+
 	api := app.Group("/api")
 
 	// admin
@@ -23,19 +28,20 @@ func SetupRoutes(app *fiber.App) {
 	admin.Post("/create-admin", handler.CreateAdmin)
 	admin.Put("/modify-languages", handler.ModifyLanguages)
 	admin.Post("/create-contest", handler.CreateContest)
+	admin.Post("/toggle-contest/:contestId", handler.ToggleContest)
 	admin.Put("/modify-contest", handler.ModifyContest)
 	admin.Post("/add-question", handler.AddQuestion)
 	admin.Put("/modify-question", handler.ModifyQuestion)
 	admin.Post("/add-testcase", handler.AddTestcase)
 	admin.Delete("/delete-language", handler.DeleteLanguage)
-	admin.Delete("/delete-contest", handler.DeleteContest)
-	admin.Delete("/delete-question", handler.DeleteQuestion)
-	admin.Delete("/delete-testcase", handler.DeleteTestcase)
+	admin.Delete("/delete-contest/:contestId", handler.DeleteContest)
+	admin.Delete("/delete-question/:questionId", handler.DeleteQuestion)
+	admin.Delete("/delete-testcase/:testcaseId", handler.DeleteTestcase)
 	admin.Get("/get-languages", handler.GetLanguages)
 	admin.Get("/get-contests", handler.GetContests)
-	admin.Get("/get-questions", handler.GetQuestions)
+	admin.Get("/get-questions/:contestId", handler.GetQuestions)
 	admin.Get("/get-question-details", handler.GetQuestionDetails)
-	admin.Get("/get-testcases", handler.GetTestcases)
+	admin.Get("/get-testcases/:questionId", handler.GetTestcases)
 
 	// auth
 	auth := api.Group("/auth")

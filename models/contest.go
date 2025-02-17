@@ -22,12 +22,13 @@ type Contest struct {
 	StartTime   string         `json:"start_time" gorm:"not null"`
 	EndTime     string         `json:"end_time" gorm:"not null"`
 	Languages   pq.StringArray `json:"languages" gorm:"type:text[]"`
+	IsActive    bool           `json:"is_active" gorm:"default:true"`
 }
 
 func (contest *Contest) BeforeSave(tx *gorm.DB) error {
 	startTime, err1 := time.Parse(time.RFC3339, contest.StartTime)
 	endTime, err2 := time.Parse(time.RFC3339, contest.EndTime)
-	if contest.Title == "" || len(contest.Description) == 0 || len(contest.Languages) == 0 || err1 != nil || err2 != nil || startTime.After(endTime) || startTime.Before(time.Now()) {
+	if contest.Title == "" || len(contest.Description) == 0 || len(contest.Languages) == 0 || err1 != nil || err2 != nil || startTime.After(endTime) {
 		return errors.New("invalid contest details")
 	}
 

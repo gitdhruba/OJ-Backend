@@ -134,6 +134,32 @@ func CreateContest(c *fiber.Ctx) error {
 	})
 }
 
+// toggle-contest
+func ToggleContest(c *fiber.Ctx) error {
+	contestID, err := strconv.Atoi(c.Params("contestId"))
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "invalid contest_id",
+		})
+	}
+
+	var contest models.Contest
+	if res := db.DB.Where(&models.Contest{ID: contestID}).First(&contest); (res.Error != nil) || (res.RowsAffected <= 0) {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "contest does not exist",
+		})
+	}
+
+	contest.IsActive = !contest.IsActive
+	if res := db.DB.Model(&contest).Updates(&models.Contest{IsActive: contest.IsActive}); res.Error != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "could not toggle contest mode",
+		})
+	}
+
+	return c.SendStatus(fiber.StatusOK)
+}
+
 // modify-contest
 func ModifyContest(c *fiber.Ctx) error {
 	return c.SendStatus(fiber.StatusForbidden)
@@ -263,17 +289,56 @@ func DeleteLanguage(c *fiber.Ctx) error {
 
 // delete-contest
 func DeleteContest(c *fiber.Ctx) error {
-	return c.SendStatus(fiber.StatusForbidden)
+	contestId, err := strconv.Atoi(c.Params("contestId"))
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "invalid contest_id",
+		})
+	}
+
+	if res := db.DB.Delete(&models.Contest{ID: contestId}); res.Error != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": res.Error.Error(),
+		})
+	}
+
+	return c.SendStatus(fiber.StatusOK)
 }
 
 // delete-question
 func DeleteQuestion(c *fiber.Ctx) error {
-	return c.SendStatus(fiber.StatusForbidden)
+	questionId, err := strconv.Atoi(c.Params("questionId"))
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "invalid question_id",
+		})
+	}
+
+	if res := db.DB.Delete(&models.Question{ID: questionId}); res.Error != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": res.Error.Error(),
+		})
+	}
+
+	return c.SendStatus(fiber.StatusOK)
 }
 
 // delete-testcase
 func DeleteTestcase(c *fiber.Ctx) error {
-	return c.SendStatus(fiber.StatusForbidden)
+	testcaseId, err := strconv.Atoi(c.Params("testcaseId"))
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "invalid testcase_id",
+		})
+	}
+
+	if res := db.DB.Delete(&models.Testcase{ID: testcaseId}); res.Error != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": res.Error.Error(),
+		})
+	}
+
+	return c.SendStatus(fiber.StatusOK)
 }
 
 // get-languages
@@ -283,12 +348,37 @@ func GetLanguages(c *fiber.Ctx) error {
 
 // get-contests
 func GetContests(c *fiber.Ctx) error {
-	return c.SendStatus(fiber.StatusForbidden)
+	var contests []models.Contest
+	if res := db.DB.Find(&contests); res.Error != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": res.Error.Error(),
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"contests": contests,
+	})
 }
 
 // get-questions
 func GetQuestions(c *fiber.Ctx) error {
-	return c.SendStatus(fiber.StatusForbidden)
+	contestId, err := strconv.Atoi(c.Params("contestId"))
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "invalid contest_id",
+		})
+	}
+
+	var questions []models.Question
+	if res := db.DB.Where(&models.Question{ContestID: contestId}).Find(&questions); res.Error != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": res.Error.Error(),
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"questions": questions,
+	})
 }
 
 // get-question-details
@@ -298,5 +388,27 @@ func GetQuestionDetails(c *fiber.Ctx) error {
 
 // get-testcases
 func GetTestcases(c *fiber.Ctx) error {
-	return c.SendStatus(fiber.StatusForbidden)
+	questionId, err := strconv.Atoi(c.Params("questionId"))
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "invalid question_id",
+		})
+	}
+
+	var testcases []models.Testcase
+	if res := db.DB.Where(&models.Testcase{QuestionID: questionId}).Find(&testcases); res.Error != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": res.Error.Error(),
+		})
+	}
+
+	// set input and output file paths as input_no.txt and output_no.txt
+	for i := range len(testcases) {
+		testcases[i].InputFilePath = fmt.Sprintf("input_%d.txt", testcases[i].No)
+		testcases[i].OutputFilePath = fmt.Sprintf("output_%d.txt", testcases[i].No)
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"testcases": testcases,
+	})
 }
