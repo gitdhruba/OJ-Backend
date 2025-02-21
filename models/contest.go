@@ -39,7 +39,7 @@ func (contest *Contest) BeforeSave(tx *gorm.DB) error {
 type Question struct {
 	ID          int     `json:"id" gorm:"primaryKey"`
 	ContestID   int     `json:"contest_id"`
-	Contest     Contest `gorm:"foreignKey:ContestID, references:ID, constraint:OnUpdate:CASCADE, OnDelete:CASCADE"`
+	Contest     Contest `gorm:"foreignKey:ContestID; constraint:OnUpdate:CASCADE, OnDelete:CASCADE"`
 	Name        string  `json:"name" gorm:"not null"`
 	Description []byte  `json:"description" gorm:"not null, type:bytea"`
 	Points      int     `json:"points" gorm:"not null"`
@@ -60,7 +60,7 @@ type Testcase struct {
 	ID             int      `json:"id" gorm:"primaryKey"`
 	No             int      `json:"no" gorm:"not null"`
 	QuestionID     int      `json:"question_id"`
-	Question       Question `gorm:"foreignKey:QuestionID, references:ID, constraint:OnUpdate:CASCADE, OnDelete:CASCADE"`
+	Question       Question `gorm:"foreignKey:QuestionID; constraint:OnUpdate:CASCADE, OnDelete:CASCADE"`
 	InputFilePath  string   `json:"input_file_path" gorm:"not null"`
 	OutputFilePath string   `json:"output_file_path" gorm:"not null"`
 }
@@ -75,9 +75,9 @@ func (testcase *Testcase) BeforeDelete(tx *gorm.DB) error {
 type Submission struct {
 	ID             int      `json:"id" gorm:"primaryKey"`
 	QuestionID     int      `json:"question_id"`
-	Question       Question `gorm:"foreignKey:QuestionID, references:ID, constraint:OnUpdate:CASCADE, OnDelete:CASCADE"`
+	Question       Question `gorm:"foreignKey:QuestionID; constraint:OnUpdate:CASCADE, OnDelete:CASCADE"`
 	UserID         int      `json:"user_id"`
-	User           User     `gorm:"foreignKey:UserID, references:ID, constraint:OnUpdate:CASCADE, OnDelete:CASCADE"`
+	User           User     `gorm:"foreignKey:UserID; constraint:OnUpdate:CASCADE, OnDelete:CASCADE"`
 	Language       string   `json:"language" gorm:"not null"`
 	Code           []byte   `json:"code" gorm:"not null, type:bytea"`
 	SubmissionTime string   `json:"submission_time" gorm:"not null"`

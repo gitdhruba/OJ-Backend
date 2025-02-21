@@ -37,11 +37,17 @@ func SetupRoutes(app *fiber.App) {
 	admin.Delete("/delete-contest/:contestId", handler.DeleteContest)
 	admin.Delete("/delete-question/:questionId", handler.DeleteQuestion)
 	admin.Delete("/delete-testcase/:testcaseId", handler.DeleteTestcase)
+	admin.Delete("/delete-user/:userId", handler.DeleteUser)
 	admin.Get("/get-languages", handler.GetLanguages)
 	admin.Get("/get-contests", handler.GetContests)
 	admin.Get("/get-questions/:contestId", handler.GetQuestions)
 	admin.Get("/get-question-details", handler.GetQuestionDetails)
 	admin.Get("/get-testcases/:questionId", handler.GetTestcases)
+	admin.Get("/download-testcase-input/:testcaseId", handler.DownloadTestcaseInput)
+	admin.Get("/download-testcase-output/:testcaseId", handler.DownloadTestcaseOutput)
+	admin.Get("/get-userlist", handler.GetUserList)
+	admin.Get("/get-submissionlist", handler.GetSubmissionList)
+	admin.Get("/get-submission-code", handler.GetSubmissionCode)
 
 	// auth
 	auth := api.Group("/auth")

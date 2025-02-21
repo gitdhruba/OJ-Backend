@@ -396,7 +396,8 @@ func GetTestcases(c *fiber.Ctx) error {
 	}
 
 	var testcases []models.Testcase
-	if res := db.DB.Where(&models.Testcase{QuestionID: questionId}).Find(&testcases); res.Error != nil {
+	fields := []string{"id", "no", "question_id"}
+	if res := db.DB.Select(fields).Where(&models.Testcase{QuestionID: questionId}).Find(&testcases); res.Error != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": res.Error.Error(),
 		})
@@ -410,5 +411,142 @@ func GetTestcases(c *fiber.Ctx) error {
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"testcases": testcases,
+	})
+}
+
+// download-testcase-input
+func DownloadTestcaseInput(c *fiber.Ctx) error {
+	testcaseId, err := strconv.Atoi(c.Params("testcaseId"))
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "invalid testcase_id",
+		})
+	}
+
+	var testcase models.Testcase
+	if res := db.DB.Select("input_file_path").Where(&models.Testcase{ID: testcaseId}).First(&testcase); (res.Error != nil) || (res.RowsAffected <= 0) {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "testcase does not exist",
+		})
+	}
+
+	if _, err := os.Stat(testcase.InputFilePath); os.IsNotExist(err) {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "input file does not exist",
+		})
+	}
+
+	return c.SendFile(testcase.InputFilePath)
+}
+
+// download-testcase-output
+func DownloadTestcaseOutput(c *fiber.Ctx) error {
+	testcaseId, err := strconv.Atoi(c.Params("testcaseId"))
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "invalid testcase_id",
+		})
+	}
+
+	var testcase models.Testcase
+	if res := db.DB.Select("output_file_path").Where(&models.Testcase{ID: testcaseId}).First(&testcase); (res.Error != nil) || (res.RowsAffected <= 0) {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "testcase does not exist",
+		})
+	}
+
+	if _, err := os.Stat(testcase.OutputFilePath); os.IsNotExist(err) {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "output file does not exist",
+		})
+	}
+
+	return c.SendFile(testcase.OutputFilePath)
+}
+
+// get-users
+func GetUserList(c *fiber.Ctx) error {
+	start, err1 := strconv.Atoi(c.Query("start"))
+	limit, err2 := strconv.Atoi(c.Query("limit"))
+	if err1 != nil || err2 != nil || start <= 0 || limit <= 0 {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "invalid start or limit",
+		})
+	}
+
+	var users []models.User
+	fields := []string{"id", "username", "email"}
+	if res := db.DB.Select(fields).Offset(start - 1).Limit(limit + 1).Find(&users); res.Error != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": res.Error.Error(),
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"users":   users,
+		"hasNext": len(users) > limit,
+	})
+}
+
+// delete-user
+func DeleteUser(c *fiber.Ctx) error {
+	userId, err := strconv.Atoi(c.Params("userId"))
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "invalid user_id",
+		})
+	}
+
+	if res := db.DB.Delete(&models.User{ID: userId}); res.Error != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": res.Error.Error(),
+		})
+	}
+
+	return c.SendStatus(fiber.StatusOK)
+}
+
+// get-submissions
+func GetSubmissionList(c *fiber.Ctx) error {
+	start, err1 := strconv.Atoi(c.Query("start"))
+	limit, err2 := strconv.Atoi(c.Query("limit"))
+	if err1 != nil || err2 != nil || start <= 0 || limit <= 0 {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "invalid start or limit",
+		})
+	}
+
+	var submissions []models.Submission
+	fields := []string{"id", "question_id", "user_id", "language", "submission_time", "verdict"}
+	if res := db.DB.Select(fields).Offset(start - 1).Limit(limit + 1).Find(&submissions); res.Error != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": res.Error.Error(),
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"submissions": submissions,
+		"hasNext":     len(submissions) > limit,
+	})
+}
+
+// get-submission-code
+func GetSubmissionCode(c *fiber.Ctx) error {
+	submissionId, err := strconv.Atoi(c.Query("submission_id"))
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "invalid submission_id",
+		})
+	}
+
+	var submission models.Submission
+	if res := db.DB.Select("code").Where(&models.Submission{ID: submissionId}).First(&submission); (res.Error != nil) || (res.RowsAffected <= 0) {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "submission does not exist",
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"code": string(submission.Code),
 	})
 }
