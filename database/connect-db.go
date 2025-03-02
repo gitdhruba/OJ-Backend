@@ -51,5 +51,6 @@ func ConnectDB() {
 		&models.Question{},
 		&models.Testcase{},
 		&models.Submission{},
+		&models.Score{},
 	)
 }

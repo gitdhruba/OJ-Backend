@@ -16,7 +16,7 @@ func SetupRoutes(app *fiber.App) {
 
 	// hello for root
 	app.Get("/", func(c *fiber.Ctx) error {
-		return c.SendString("Hi there! This is the backend server for the Online Judge.")
+		return c.Status(fiber.StatusOK).SendString("Hi there! This is the backend server for the Online Judge.")
 	})
 
 	api := app.Group("/api")
@@ -54,15 +54,15 @@ func SetupRoutes(app *fiber.App) {
 	auth.Post("/signup", handler.Signup)
 	auth.Post("/login", handler.Login)
 	auth.Get("/logout", handler.Logout)
-	auth.Get("/reclaim-accesstoken", handler.ReclaimAccessToken)
+	// auth.Get("/reclaim-accesstoken", handler.ReclaimAccessToken)
 
-	// api
+	// contest
 	contest := api.Group("/contest")
 	contest.Get("/get-contestlist", handler.GetContestList)
-	contest.Get("/get-questionlist", handler.GetQuestionList)
+	contest.Get("/get-questionlist/:contestId", handler.GetQuestionList)
 	contest.Get("/get-question", handler.GetQuestion)
 	contest.Post("/submit-code", handler.SubmitCode)
 	contest.Get("/get-submissions", handler.GetSubmissions)
-	contest.Get("/get-solutioncode", handler.GetSolutionCode)
-	contest.Get("/get-leaderboardstats", handler.GetLeaderboardStats)
+	contest.Get("/get-solutioncode/:submissionId", handler.GetSolutionCode)
+	contest.Get("/get-leaderboardstats/:contestId", handler.GetLeaderboardStats)
 }

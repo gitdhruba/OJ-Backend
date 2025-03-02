@@ -40,6 +40,7 @@ type Question struct {
 	ID          int     `json:"id" gorm:"primaryKey"`
 	ContestID   int     `json:"contest_id"`
 	Contest     Contest `gorm:"foreignKey:ContestID; constraint:OnUpdate:CASCADE, OnDelete:CASCADE"`
+	No          int     `json:"no" gorm:"not null"`
 	Name        string  `json:"name" gorm:"not null"`
 	Description []byte  `json:"description" gorm:"not null, type:bytea"`
 	Points      int     `json:"points" gorm:"not null"`
@@ -79,7 +80,31 @@ type Submission struct {
 	UserID         int      `json:"user_id"`
 	User           User     `gorm:"foreignKey:UserID; constraint:OnUpdate:CASCADE, OnDelete:CASCADE"`
 	Language       string   `json:"language" gorm:"not null"`
-	Code           []byte   `json:"code" gorm:"not null, type:bytea"`
-	SubmissionTime string   `json:"submission_time" gorm:"not null"`
-	Verdict        string   `json:"verdict" gorm:"not null"`
+	Code           []byte   `json:"code" gorm:"type:bytea"`
+	SubmissionTime string   `json:"submission_time"`
+	Verdict        string   `json:"verdict" gorm:"default:'PENDING'"`
+	ExecTime       int      `json:"exec_time"`
+	Memory         int      `json:"memory"`
+}
+
+// score model
+type Score struct {
+	UserID    int     `json:"user_id" gorm:"primaryKey;autoIncrement:false"`
+	User      User    `gorm:"foreignKey:UserID; constraint:OnUpdate:CASCADE, OnDelete:CASCADE"`
+	ContestID int     `json:"contest_id" gorm:"primaryKey;autoIncrement:false"`
+	Contest   Contest `gorm:"foreignKey:ContestID; constraint:OnUpdate:CASCADE, OnDelete:CASCADE"`
+	Points    int     `json:"points" gorm:"not null"`
+	Penalty   int     `json:"penalty" gorm:"not null"`
+}
+
+// leaderboard model
+type Leaderboard struct {
+	UserID    int     `json:"user_id" gorm:"primaryKey;autoIncrement:false"`
+	User      User    `gorm:"foreignKey:UserID; constraint:OnUpdate:CASCADE, OnDelete:CASCADE"`
+	Username  string  `json:"username"`
+	ContestID int     `json:"contest_id" gorm:"primaryKey;autoIncrement:false"`
+	Contest   Contest `gorm:"foreignKey:ContestID; constraint:OnUpdate:CASCADE, OnDelete:CASCADE"`
+	Points    int     `json:"points" gorm:"not null"`
+	Penalty   int     `json:"penalty" gorm:"not null"`
+	Trials    []int64 `json:"trials" gorm:"not null"`
 }
