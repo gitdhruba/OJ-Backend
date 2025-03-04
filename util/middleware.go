@@ -71,7 +71,7 @@ func ApiMiddleware() func(*fiber.Ctx) error {
 				})
 			}
 
-			// set access and refresh tokens in response header
+			// set new access and refresh tokens in response header
 			c.Set("access_token", accessToken)
 			c.Set("refresh_token", refreshToken)
 		}

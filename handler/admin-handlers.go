@@ -15,7 +15,6 @@ import (
 	"strconv"
 
 	"github.com/gofiber/fiber/v2"
-	"golang.org/x/crypto/bcrypt"
 )
 
 // login
@@ -35,7 +34,7 @@ func AdminLogin(c *fiber.Ctx) error {
 		})
 	}
 
-	if err := bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(password)); err != nil {
+	if !util.ComparePassword(u.Password, password) {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 			"error": "Invalid credentials",
 		})
@@ -75,21 +74,13 @@ func CreateAdmin(c *fiber.Ctx) error {
 		})
 	}
 
-	cost, err := strconv.Atoi(config.GetEnv("BCRYPT_COST"))
-	if err != nil {
+	// hash password
+	if !util.HashPassword(&u.Password) {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "could not create admin",
+			"error": "could not hash password",
 		})
 	}
 
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(u.Password), cost)
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "could not create admin",
-		})
-	}
-
-	u.Password = string(hashedPassword)
 	if res := db.DB.Model(&u).Create(&u); res.Error != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "could not create admin",

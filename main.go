@@ -19,7 +19,6 @@ const (
 )
 
 func main() {
-
 	// load environment variables
 	config.LoadEnv()
 
@@ -32,18 +31,6 @@ func main() {
 	// setup routes
 	router.SetupRoutes(app)
 
-	// app.Get("/", func(c *fiber.Ctx) error {
-	// 	log.Println("GET")
-	// 	return c.SendStatus(fiber.StatusOK)
-	// })
-
-	// adminpass := []byte("glug@2025")
-	// hashedPassword, err := bcrypt.GenerateFromPassword(adminpass, 15)
-	// if err != nil {
-	// 	fmt.Println(err)
-	// } else {
-	// 	fmt.Println(string(hashedPassword))
-	// }
-
+	// listen on port
 	fmt.Println(app.Listen(port))
 }

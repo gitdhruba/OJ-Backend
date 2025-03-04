@@ -13,3 +13,19 @@ func IsValidDuration(startTime, endTime string) bool {
 	endTimeParsed, err2 := time.Parse(time.RFC3339, endTime)
 	return ((err1 == nil) && (err2 == nil) && (startTimeParsed.Before(endTimeParsed)) && (startTimeParsed.After(time.Now())))
 }
+
+// check whether the given string is a valid email
+func IsValidEmail(email string) bool {
+	/*
+		Email validation logic goes here
+	*/
+	return true
+}
+
+// check whether the password is strong enough
+func IsValidPassword(password string) bool {
+	/*
+		Password validation logic goes here
+	*/
+	return true
+}
